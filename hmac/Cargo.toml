@@ -1,0 +1,6 @@
+[package]
+name = "hmac"
+version = "0.1.0"
+authors = ["gpestana <g6pestana@gmail.com>"]
+
+[dependencies]
