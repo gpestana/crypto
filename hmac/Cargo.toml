@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["gpestana <g6pestana@gmail.com>"]
 
 [dependencies]
+sha2 = "0.8.0"

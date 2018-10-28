@@ -1,6 +1,38 @@
-fn hash(_s: String, m: String) -> (String) {
-    m
+#![allow(unused)]
+extern crate sha2;
+
+use sha2::{Sha256, Digest};
+
+const BLOCK_SIZE: usize = 8; // block size is 64 bits (8bytes)
+const OPAD: u8 = 0x5c;
+const IPAD: u8 = 0x36;
+
+fn hash(s: String, m: String) -> str {
+    // define k: hash(m) iff len(m) > block_size | k
+    let k = {
+        if m.len() > BLOCK_SIZE {
+            // return hash
+            let mut hasher = Sha256::default();
+            hasher.input(&m)
+        } 
+        m[..]
+    };
+    k
 }
+
+fn main() {
+    let k = String::from("key");
+    let m = String::from("large_message");
+
+    // tests
+    let ms = m.clone();
+    let mb = ms.as_bytes();
+    println!("{}, {:?}", ms.len(), mb);
+    // ---
+
+    println!("HMAC-SHA256 implementation ({}, {}, {})", OPAD, IPAD, hash(k, m));
+}
+
 
 #[cfg(test)]
 mod tests {
