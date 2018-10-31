@@ -1,10 +1,12 @@
 #![allow(unused)]
 extern crate sha2;
+extern crate hmac;
 
 use std::str;
 use sha2::{Sha256, Digest};
-use sha2::digest::generic_array::GenericArray;
-use sha2::digest::generic_array::typenum::U32;
+use hmac::{Hmac, Mac};
+
+type HmacSha256 = Hmac<Sha256>; // implementation of HMAC-256 for comparison
 
 const BLOCK_SIZE: usize = 8; // block size is 64 bits (8bytes)
 const OPAD: u8 = 0x5c;
@@ -70,39 +72,53 @@ fn to_string(vec: Vec<u8>) -> String {
     String::from_utf8_lossy(&vec).to_string()
 }
 
+// formal HMAC-256 implementation
+fn real_hash(m: &String, k: &String) -> Vec<u8> {
+    let mut mac = HmacSha256::new_varkey(k.as_bytes())
+        .expect("HMAC can take key of any size");
+    mac.input(m.as_bytes());
+    mac.result().code().to_vec()
+}
+
 fn main() {
     let k = String::from("key");
     let m = String::from("The quick brown fox jumps over the lazy dog");
 
     let h = hash(&k, &m);
+    let fm = real_hash(&k, &m);
 
-    println!("HMAC-SHA256 implementation ({}, {})", k, m);
-    println!("{:?}", h);;
+    println!("{:?}", h);
     println!("{:?}", to_string(h));
+    println!("-----");
+    println!("{:?}", fm);
+    println!("{:?}", to_string(fm));
+
 }
 
 
 #[cfg(test)]
 mod tests {
-    fn to_string(vec: Vec<u8>) -> String {
-        String::from_utf8_lossy(&vec).to_string()
-    }
-
     #[test]
     fn case_empty() {
         use hash;
+        use real_hash;
 
-        let expect_hmac = "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad".to_string();
-        let res_hmac = hash(&"".to_string(), &"".to_string());
-        assert_eq!(expect_hmac, to_string(res_hmac));
+        let k = String::from("");
+        let m = String::from("");
+        let res_hmac = hash(&k, &m);
+        let expected_hmac = real_hash(&k, &m);
+        assert_eq!(expected_hmac, res_hmac);
     }
 
     #[test]
     fn case_message() {
         use hash;
+        use real_hash;
 
-        let expect_hmac = "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8".to_string();
-        let res_hmac = hash(&"key".to_string(), &"The quick brown fox jumps over the lazy dog".to_string());
-        assert_eq!(expect_hmac, to_string(res_hmac));
+        let k = String::from("key");
+        let m = String::from("The quick brown fox jumps over the lazy dog");
+        let res_hmac = hash(&k, &m);
+        let expected_hmac = real_hash(&k, &m);
+        assert_eq!(expected_hmac, res_hmac);
     }
 }
