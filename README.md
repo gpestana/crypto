@@ -8,6 +8,12 @@ Notes and research
 The implementations of these crypto primitives are for academical purposes only.
 Highly inspired by [@arnaucube cryptofun project](https://github.com/arnaucube/cryptofun)
 
+### HMAC
+
+- https://en.wikipedia.org/wiki/HMAC
+
+- [ ] HMAC-SHA256
+
 ### RSA cryptosystem & Blind signature & Homomorphic Multiplication
 - https://en.wikipedia.org/wiki/RSA_(cryptosystem)#
 - https://en.wikipedia.org/wiki/Blind_signature
