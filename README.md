@@ -12,7 +12,7 @@ Highly inspired by [@arnaucube cryptofun project](https://github.com/arnaucube/c
 
 - https://en.wikipedia.org/wiki/HMAC
 
-- [ ] HMAC-SHA256
+- [x] HMAC-SHA256
 
 ### RSA cryptosystem & Blind signature & Homomorphic Multiplication
 - https://en.wikipedia.org/wiki/RSA_(cryptosystem)#

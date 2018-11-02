@@ -11,18 +11,15 @@ const IPAD: u8 = 0x36;
 fn hash(s: &String, m: &String) -> Vec<u8>  {
     // convert message and secret to vec
     let m_vec: Vec<u8> = m.as_bytes().iter().map(|x| *x).collect();
-    let mut s_vec: Vec<u8> = s.as_bytes().iter().map(|x| *x).collect();
+    let s_vec: Vec<u8> = s.as_bytes().iter().map(|x| *x).collect();
 
     // k' = k iif k.len() < 64, otherwise k'= H(k)
     let mut k: Vec<u8> = vec![0; BLOCK_SIZE];
     if s_vec.len() > BLOCK_SIZE {
-        s_vec = digest256(s_vec);
-    }
-
-    // k needs to be BLOCK_SIZE-padded with 0
-    for (i, e) in s_vec.into_iter().enumerate() {
+        k = digest256(s_vec);
+        }
+    for (i, e) in s_vec.into_iter().enumerate()
         k[i] = e;
-    }
     
     // H(opad ^ k') && H(ipad ^ k')
     let oh = add_pad(OPAD, &k);
