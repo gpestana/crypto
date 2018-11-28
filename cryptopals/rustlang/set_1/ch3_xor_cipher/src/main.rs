@@ -5,6 +5,8 @@ use std::str::from_utf8;
 
 extern crate hex;
 
+const WORD_SIZE: u8 = 34;
+
 fn main() {
     let encoded_str =
         String::from("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
@@ -42,45 +44,50 @@ fn main() {
     println!("{:?}", from_utf8(plaintext.as_slice()).unwrap());
 }
 
-fn chi_square(c: &HashMap<u8, f64>, e: &HashMap<u8, f64>) -> f64 {
-    if c.clone().keys().len() != e.clone().keys().len() {
+fn chi_square(o: &HashMap<u8, f64>, e: &HashMap<u8, f64>) -> f64 {
+    if o.clone().keys().len() != e.clone().keys().len() {
         panic!(
             "chi_square: both arrays should have same length, {} != {}",
-            c.clone().keys().len(),
+            o.clone().keys().len(),
             e.clone().keys().len()
         );
     }
 
     let mut v: f64 = 0.0;
-    for k in c.clone().keys() {
-        v = v + (f64::powi(c[k] - e[k], 2) / e[k]);
+    for key in o.clone().keys() {
+        let obs = *o.get(&key).unwrap();
+        let exp = *e.get(&key).unwrap();
+
+        if obs != 0.0 {
+            let obs = o[&key] * WORD_SIZE as f64;
+            v = v + (f64::powi(exp - obs, 2) / obs);
+        }
     }
     return v;
 }
 
 fn calculate_occ(p: &[u8]) -> HashMap<u8, f64> {
-    let mut occs: HashMap<u8, f64> = HashMap::new();
-    // init occs
-    for i in 97..123 {
-        occs.insert(i as u8, 0.0);
-    }
-
-    // calculate occurrences
+    let mut occs: HashMap<u8, f64> = new_zero_hashmap();
     for b in p.iter() {
         let sum = match occs.get(b) {
             Some(s) => s + 1.0,
             None => 1.0,
         };
-        if *b >= 97 && *b < 123 {
-            occs.insert(*b, sum);
-        }
+        occs.insert(*b, sum);
     }
-
     occs
 }
 
+fn new_zero_hashmap() -> HashMap<u8, f64> {
+    let mut hm: HashMap<u8, f64> = HashMap::new();
+    for i in 0..255 {
+        hm.insert(i, 0.0);
+    }
+    hm
+}
+
 fn eng_freq() -> HashMap<u8, f64> {
-    let mut f: HashMap<u8, f64> = HashMap::new();
+    let mut f: HashMap<u8, f64> = new_zero_hashmap();
     f.insert(97, 0.08167); //a
     f.insert(98, 0.01492);
     f.insert(99, 0.02782);
