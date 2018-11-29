@@ -5,13 +5,11 @@ use std::str::from_utf8;
 
 extern crate hex;
 
-const WORD_SIZE: u8 = 34;
-
 fn main() {
     let encoded_str =
         String::from("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
 
-    let hex = match hex::decode(&encoded_str) {
+    let hex_str = match hex::decode(&encoded_str) {
         Ok(h) => h,
         Err(e) => panic!("{}", e),
     };
@@ -19,29 +17,37 @@ fn main() {
     // tests all possible one-byte secret
     let mut chi_min: f64 = 0.0;
     let mut secret: u8 = 0;
-    for i in 97..123 {
-        let mut pt = vec![0; hex.len()];
-        for (j, b) in hex.iter().enumerate() {
-            pt[j] = *b ^ i as u8;
-        }
-        let pt_occ = calculate_occ(&pt);
+
+    for i in 65..90 {
+        let plaintext_candidate = decrypt(hex_str.clone(), i);
+        let pt_occ = calculate_occ(&plaintext_candidate);
         let chi = chi_square(&pt_occ, &eng_freq());
 
+        // select chi_square minimum
         if chi_min == 0.0 || chi_min > chi {
             chi_min = chi;
             secret = i;
         };
-
-        println!("{} {}", i, chi);
+        println!(
+            "{} {} {}",
+            i,
+            chi,
+            from_utf8(plaintext_candidate.as_slice()).unwrap()
+        );
     }
     println!("\nSecret: {} (chi square: {})", secret, chi_min);
 
     // decrypt using the found key
-    let mut plaintext = hex.clone();
+    let plaintext = decrypt(hex_str.clone(), secret);
+    println!("{:?}", from_utf8(plaintext.as_slice()).unwrap());
+}
+
+fn decrypt(cipher: std::vec::Vec<u8>, secret: u8) -> std::vec::Vec<u8> {
+    let mut plaintext = cipher.clone();
     for (i, b) in plaintext.clone().iter().enumerate() {
         plaintext[i] = b ^ secret;
     }
-    println!("{:?}", from_utf8(plaintext.as_slice()).unwrap());
+    plaintext
 }
 
 fn chi_square(o: &HashMap<u8, f64>, e: &HashMap<u8, f64>) -> f64 {
@@ -58,9 +64,8 @@ fn chi_square(o: &HashMap<u8, f64>, e: &HashMap<u8, f64>) -> f64 {
         let obs = *o.get(&key).unwrap();
         let exp = *e.get(&key).unwrap();
 
-        if obs != 0.0 {
-            let obs = o[&key] * WORD_SIZE as f64;
-            v = v + (f64::powi(exp - obs, 2) / obs);
+        if exp != 0.0 {
+            v = v + (f64::powi(obs - exp, 2) / exp);
         }
     }
     return v;
@@ -70,8 +75,8 @@ fn calculate_occ(p: &[u8]) -> HashMap<u8, f64> {
     let mut occs: HashMap<u8, f64> = new_zero_hashmap();
     for b in p.iter() {
         let sum = match occs.get(b) {
-            Some(s) => s + 1.0,
-            None => 1.0,
+            Some(s) => (s + 1.0) / p.len() as f64,
+            None => 1.0 / p.len() as f64,
         };
         occs.insert(*b, sum);
     }
@@ -115,4 +120,32 @@ fn eng_freq() -> HashMap<u8, f64> {
     f.insert(121, 0.03974);
     f.insert(122, 0.00074);
     f
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    #[test]
+    fn chi_square_test() {
+        // expected
+        let mut e: HashMap<u8, f64> = HashMap::new();
+        e.insert(0, 10.0);
+        e.insert(1, 10.0);
+        e.insert(2, 10.0);
+        e.insert(3, 10.0);
+        e.insert(4, 10.0);
+
+        // observation
+        let mut o: HashMap<u8, f64> = HashMap::new();
+        o.insert(0, 4.0);
+        o.insert(1, 6.0);
+        o.insert(2, 14.0);
+        o.insert(3, 10.0);
+        o.insert(4, 16.0);
+
+        let chi = chi_square(&o, &e);
+        assert_eq!(chi, 10.4);
+    }
+
 }
