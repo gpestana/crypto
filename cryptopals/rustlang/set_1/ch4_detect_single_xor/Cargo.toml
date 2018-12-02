@@ -1,0 +1,7 @@
+[package]
+name = "ch4_detect_single_xor"
+version = "0.1.0"
+authors = ["gpestana <g6pestana@gmail.com>"]
+
+[dependencies]
+cryptanalysis = { git = "https://github.com/gpestana/cryptanalysis" }
