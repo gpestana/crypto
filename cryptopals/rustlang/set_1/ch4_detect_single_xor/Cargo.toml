@@ -4,6 +4,5 @@ version = "0.1.0"
 authors = ["gpestana <g6pestana@gmail.com>"]
 
 [dependencies]
-#cryptanalysis = { git = "https://github.com/gpestana/cryptanalysis" }
-cryptanalysis = { path = "../../../../../cryptanalysis/" }
+ch3_xor_cipher = { path = "../ch3_xor_cipher" }
 hex = "0.3.2"

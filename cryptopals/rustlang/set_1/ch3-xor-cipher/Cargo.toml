@@ -2,7 +2,6 @@
 name = "ch3_xor_cipher"
 version = "0.1.0"
 authors = ["gpestana <g6pestana@gmail.com>"]
-edition = "2018"
 
 [dependencies]
 hex = "0.3.2"

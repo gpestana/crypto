@@ -1,74 +1,51 @@
 #[allow(dead_code)]
+extern crate hex;
+
 use std::collections::HashMap;
 use std::f64;
 use std::str::from_utf8;
+use std::vec::Vec;
 
-extern crate hex;
+const ASCII_A: u8 = 65;
+const ASCII_Z: u8 = 90;
 
-fn main() {
-    let encoded_str =
-        String::from("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
-
-    let hex_str = match hex::decode(&encoded_str) {
-        Ok(h) => h,
-        Err(e) => panic!("{}", e),
-    };
-
-    // tests all possible one-byte secret
+pub fn find_key_str(hex_str: Vec<u8>) -> (f64, u8) {
     let mut chi_min: f64 = 0.0;
     let mut secret: u8 = 0;
 
-    for i in 65..90 {
+    for i in ASCII_A..ASCII_Z {
         let plaintext_candidate = decrypt(hex_str.clone(), i);
-        let pt_occ = calculate_occ(&plaintext_candidate);
-        let chi = chi_square(&pt_occ, &eng_freq());
+        let plaintext_occ = calculate_occ(&plaintext_candidate);
+        let chi = chi_square(&plaintext_occ, &eng_freq());
 
         // select chi_square minimum
         if chi_min == 0.0 || chi_min > chi {
             chi_min = chi;
             secret = i;
         };
-        println!(
-            "{} {} {}",
-            i,
-            chi,
-            from_utf8(plaintext_candidate.as_slice()).unwrap()
-        );
     }
-    println!("\nSecret: {} (chi square: {})", secret, chi_min);
-
-    // decrypt using the found key
-    let plaintext = decrypt(hex_str.clone(), secret);
-    println!("{:?}", from_utf8(plaintext.as_slice()).unwrap());
+    (chi_min, secret)
 }
 
-fn decrypt(cipher: std::vec::Vec<u8>, secret: u8) -> std::vec::Vec<u8> {
-    let mut plaintext = cipher.clone();
-    for (i, b) in plaintext.clone().iter().enumerate() {
-        plaintext[i] = b ^ secret;
-    }
-    plaintext
+pub fn decrypt(cipher: Vec<u8>, secret: u8) -> Vec<u8> {
+    cipher.iter().map(|v| v ^ secret).collect()
 }
 
-fn chi_square(o: &HashMap<u8, f64>, e: &HashMap<u8, f64>) -> f64 {
-    if o.clone().keys().len() != e.clone().keys().len() {
-        panic!(
-            "chi_square: both arrays should have same length, {} != {}",
-            o.clone().keys().len(),
-            e.clone().keys().len()
-        );
+fn chi_square(observed: &HashMap<u8, f64>, expected: &HashMap<u8, f64>) -> f64 {
+    if observed.keys().len() != expected.keys().len() {
+        panic!("chi_square: both arrays should have same length")
     }
 
-    let mut v: f64 = 0.0;
-    for key in o.clone().keys() {
-        let obs = *o.get(&key).unwrap();
-        let exp = *e.get(&key).unwrap();
+    let mut chi: f64 = 0.0;
+    for key in observed.keys() {
+        let obs = observed.get(key).unwrap();
+        let exp = expected.get(key).unwrap();
 
-        if exp != 0.0 {
-            v = v + (f64::powi(obs - exp, 2) / exp);
+        if *exp != 0.0 as f64 {
+            chi = chi + (f64::powi(obs - exp, 2) / exp);
         }
     }
-    return v;
+    chi
 }
 
 fn calculate_occ(p: &[u8]) -> HashMap<u8, f64> {
@@ -148,4 +125,17 @@ mod tests {
         assert_eq!(chi, 10.4);
     }
 
+    #[test]
+    fn test_challenge() {
+        let solution = "Cooking MC\'s like a pound of bacon".to_string();
+
+        let encoded_str =
+            String::from("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736");
+        let hex_str = hex::decode(&encoded_str).unwrap();
+
+        let (_, secret) = find_key_str(hex_str.clone());
+
+        let plaintext = decrypt(hex_str, secret);
+        assert_eq!(from_utf8(&plaintext).unwrap(), solution);
+    }
 }
